@@ -6,6 +6,7 @@ import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
 import jakarta.persistence.Table;
+import java.time.OffsetDateTime;
 
 @Entity
 @Table(name = "sensor_measure")
@@ -29,7 +30,8 @@ public class SensorMeasure {
 
     private Double humidity;
 
-    private String timestamp;
+    @Column(name = "timestamp")
+    private OffsetDateTime measureTime;
 
     public Long getId() {
         return id;
@@ -79,11 +81,11 @@ public class SensorMeasure {
         this.humidity = humidity;
     }
 
-    public String getTimestamp() {
-        return timestamp;
+    public OffsetDateTime getMeasureTime() {
+        return measureTime;
     }
 
-    public void setTimestamp(String timestamp) {
-        this.timestamp = timestamp;
+    public void setMeasureTime(OffsetDateTime measureTime) {
+        this.measureTime = measureTime;
     }
 }

@@ -1,0 +1,309 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Capteurs</title>
+    <style>
+        :root {
+            --card-radius: 14px;
+            --space: 14px;
+            --border: #e6e8ec;
+            --text: #1f1f1f;
+            --muted: #5f6472;
+            --accent: #2a8fff;
+            --bg: #f6f7fb;
+        }
+
+        * { box-sizing: border-box; }
+
+        body {
+            margin: 0;
+            font-family: "Inter", system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+            background: var(--bg);
+            color: var(--text);
+            padding: calc(var(--space) * 1.2);
+        }
+
+        h1 {
+            margin: 0 0 var(--space) 0;
+            font-size: 1.6rem;
+            letter-spacing: -0.02em;
+        }
+
+        .grid {
+            display: grid;
+            grid-template-columns: 1fr;
+            gap: var(--space);
+        }
+
+        details.card {
+            background: #fff;
+            border: 1px solid var(--border);
+            border-radius: var(--card-radius);
+            box-shadow: 0 8px 24px rgba(22, 26, 33, 0.05);
+            overflow: hidden;
+        }
+
+        summary {
+            list-style: none;
+            display: flex;
+            align-items: center;
+            gap: var(--space);
+            padding: var(--space);
+            cursor: pointer;
+        }
+
+        summary::-webkit-details-marker { display: none; }
+
+        .sensor-title {
+            font-weight: 700;
+            font-size: 1rem;
+            margin: 0;
+        }
+
+        .temperature {
+            margin-left: auto;
+            font-size: 1.8rem;
+            font-weight: 800;
+            color: var(--accent);
+        }
+
+        .badge {
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            padding: 6px 10px;
+            background: #eef4ff;
+            color: var(--accent);
+            border-radius: 999px;
+            font-size: 0.85rem;
+            font-weight: 600;
+        }
+
+        .meta {
+            display: flex;
+            gap: 8px;
+            flex-wrap: wrap;
+            font-size: 0.92rem;
+            color: var(--muted);
+        }
+
+        .details {
+            padding: 0 var(--space) var(--space);
+            display: grid;
+            gap: 10px;
+        }
+
+        .metrics {
+            display: grid;
+            gap: 8px;
+            grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+        }
+
+        .metric {
+            background: #f7f9fc;
+            border: 1px solid #edf1f6;
+            border-radius: 10px;
+            padding: 10px 12px;
+        }
+
+        .metric .label { font-size: 0.85rem; color: var(--muted); }
+        .metric .value { font-weight: 700; margin-top: 4px; font-size: 1rem; }
+
+        .history {
+            background: linear-gradient(180deg, #f9fbff 0%, #f5f7fb 100%);
+            border: 1px solid #eef2f7;
+            border-radius: 12px;
+            padding: 12px;
+        }
+
+        .history header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 8px;
+        }
+
+        .history h4 { margin: 0; font-size: 1rem; }
+
+        canvas.sparkline { width: 100%; height: 120px; }
+
+        .empty, .error {
+            padding: 8px 10px;
+            border-radius: 10px;
+            background: #fff3cd;
+            color: #8a6d3b;
+            font-size: 0.95rem;
+        }
+
+        .error { background: #ffe1e1; color: #9c2b2b; }
+
+        @media (min-width: 720px) {
+            .grid { grid-template-columns: repeat(2, 1fr); }
+        }
+
+        @media (min-width: 1080px) {
+            body { max-width: 1080px; margin: 0 auto; }
+            .grid { grid-template-columns: repeat(3, 1fr); }
+        }
+    </style>
+</head>
+<body>
+<h1>Capteurs</h1>
+<div id="cards" class="grid"></div>
+
+<script>
+    async function fetchJson(url) {
+        const response = await fetch(url);
+        if (!response.ok) {
+            throw new Error(`Erreur ${response.status}`);
+        }
+        return response.json();
+    }
+
+    function formatRelativeTime(dateString) {
+        if (!dateString) return 'inconnu';
+        const date = new Date(dateString);
+        const diff = Date.now() - date.getTime();
+        const minutes = Math.floor(diff / 60000);
+        if (minutes < 1) return 'à l’instant';
+        if (minutes < 60) return `il y a ${minutes} min`;
+        const hours = Math.floor(minutes / 60);
+        if (hours < 24) return `il y a ${hours} h`;
+        const days = Math.floor(hours / 24);
+        return `il y a ${days} j`;
+    }
+
+    function renderSparkline(canvas, points) {
+        if (!points.length) return;
+        const ctx = canvas.getContext('2d');
+        const width = canvas.width = canvas.clientWidth * window.devicePixelRatio;
+        const height = canvas.height = canvas.clientHeight * window.devicePixelRatio;
+        const values = points.map(p => p.temperature);
+        const min = Math.min(...values);
+        const max = Math.max(...values);
+        const range = Math.max(max - min, 1);
+
+        ctx.clearRect(0, 0, width, height);
+        ctx.beginPath();
+        ctx.strokeStyle = '#2a8fff';
+        ctx.lineWidth = 3;
+
+        points.forEach((point, index) => {
+            const x = (index / Math.max(points.length - 1, 1)) * (width - 8) + 4;
+            const y = height - (((point.temperature - min) / range) * (height - 8) + 4);
+            if (index === 0) ctx.moveTo(x, y); else ctx.lineTo(x, y);
+        });
+        ctx.stroke();
+
+        ctx.fillStyle = '#2a8fff';
+        points.forEach((point, index) => {
+            const x = (index / Math.max(points.length - 1, 1)) * (width - 8) + 4;
+            const y = height - (((point.temperature - min) / range) * (height - 8) + 4);
+            ctx.beginPath();
+            ctx.arc(x, y, 4 * window.devicePixelRatio, 0, Math.PI * 2);
+            ctx.fill();
+        });
+    }
+
+    function createMetric(label, value, unit = '') {
+        const div = document.createElement('div');
+        div.className = 'metric';
+        div.innerHTML = `<div class="label">${label}</div><div class="value">${value ?? '—'}${value != null ? unit : ''}</div>`;
+        return div;
+    }
+
+    async function renderCards() {
+        const container = document.getElementById('cards');
+        container.innerHTML = 'Chargement…';
+        try {
+            const sensors = await fetchJson('/sensor/measure/latest');
+            if (!sensors.length) {
+                container.innerHTML = '<div class="empty">Aucune donnée disponible pour le moment.</div>';
+                return;
+            }
+            container.innerHTML = '';
+            sensors.forEach(sensor => {
+                const card = document.createElement('details');
+                card.className = 'card';
+
+                const summary = document.createElement('summary');
+                summary.innerHTML = `
+                    <div>
+                        <p class="sensor-title">${sensor.sensorName}</p>
+                        <div class="meta">
+                            <span class="badge">${formatRelativeTime(sensor.measureTime)}</span>
+                        </div>
+                    </div>
+                    <div class="temperature">${sensor.temperature.toFixed(1)}°</div>
+                `;
+                card.appendChild(summary);
+
+                const details = document.createElement('div');
+                details.className = 'details';
+
+                const metrics = document.createElement('div');
+                metrics.className = 'metrics';
+                metrics.append(
+                    createMetric('Humidité', sensor.humidity, ' %'),
+                    createMetric('Pression', sensor.pression, ' hPa'),
+                    createMetric('Altitude', sensor.altitude, ' m')
+                );
+                details.appendChild(metrics);
+
+                const history = document.createElement('div');
+                history.className = 'history';
+                history.innerHTML = `
+                    <header>
+                        <h4>Historique 24h</h4>
+                        <small class="meta">toutes mesures disponibles</small>
+                    </header>
+                    <canvas class="sparkline" role="img" aria-label="Historique des températures"></canvas>
+                    <div class="history-list"></div>
+                `;
+                details.appendChild(history);
+
+                card.appendChild(details);
+                container.appendChild(card);
+
+                let historyLoaded = false;
+                card.addEventListener('toggle', async () => {
+                    if (card.open && !historyLoaded) {
+                        historyLoaded = true;
+                        await loadHistory(sensor.sensorName, history);
+                    }
+                });
+            });
+        } catch (e) {
+            container.innerHTML = `<div class="error">Impossible de charger les données : ${e.message}</div>`;
+        }
+    }
+
+    async function loadHistory(sensorName, container) {
+        const list = container.querySelector('.history-list');
+        const canvas = container.querySelector('canvas');
+        list.innerHTML = 'Chargement…';
+        try {
+            const data = await fetchJson(`/sensor/measure/history/${encodeURIComponent(sensorName)}?hours=24`);
+            if (!data.length) {
+                list.innerHTML = '<div class="empty">Pas de mesures sur les dernières 24h.</div>';
+                return;
+            }
+            renderSparkline(canvas, data.slice().reverse());
+            list.innerHTML = data.slice(0, 5).map(d => {
+                const date = new Date(d.measureTime);
+                const hours = `${date.getHours()}`.padStart(2, '0');
+                const minutes = `${date.getMinutes()}`.padStart(2, '0');
+                return `<div class="meta">${hours}h${minutes} · ${d.temperature.toFixed(1)}° · ${formatRelativeTime(d.measureTime)}</div>`;
+            }).join('');
+        } catch (e) {
+            list.innerHTML = `<div class="error">Erreur lors du chargement : ${e.message}</div>`;
+        }
+    }
+
+    renderCards();
+    setInterval(renderCards, 60_000);
+</script>
+</body>
+</html>
