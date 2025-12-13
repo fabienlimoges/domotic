@@ -1,7 +1,7 @@
 FROM gradle:8.4-jdk17 AS build
 WORKDIR /app
-COPY backend/build.gradle settings.gradle ./
-COPY backend/src ./src
+COPY build.gradle settings.gradle ./
+COPY src ./src
 RUN gradle bootJar -x test --no-daemon
 
 FROM eclipse-temurin:17-jre
