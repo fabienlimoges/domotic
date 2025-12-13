@@ -3,7 +3,7 @@ export interface SensorMeasure {
   sensorName: string;
   temperature: number;
   pression: number;
-  altitude: number;
+  altitude?: number | null;
   humidity?: number;
   measuredAt?: string;
 }

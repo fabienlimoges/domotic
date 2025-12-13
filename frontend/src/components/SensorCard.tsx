@@ -56,11 +56,13 @@ const SensorCard = ({ sensor, staleThresholdMinutes = 60 }: SensorCardProps) => 
           <Gauge className="h-4 w-4 text-terracotta" />
           <span>{sensor.pression.toFixed(0)} hPa</span>
         </div>
-        
-        <div className="metric-pill">
-          <Mountain className="h-4 w-4 text-bamboo" />
-          <span>{sensor.altitude} m</span>
-        </div>
+
+        {typeof sensor.altitude === "number" && (
+          <div className="metric-pill">
+            <Mountain className="h-4 w-4 text-bamboo" />
+            <span>{sensor.altitude} m</span>
+          </div>
+        )}
       </footer>
     </article>
   );
