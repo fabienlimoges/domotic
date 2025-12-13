@@ -14,7 +14,6 @@ public class SensorMeasureRequest {
     @NotNull
     private Double pression;
 
-    @NotNull
     private Double altitude;
 
     private Double humidity;

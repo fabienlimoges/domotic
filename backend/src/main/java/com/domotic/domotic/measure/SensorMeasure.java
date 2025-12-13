@@ -24,8 +24,8 @@ public class SensorMeasure {
     @Column(nullable = false)
     private double pression;
 
-    @Column(nullable = false)
-    private double altitude;
+    @Column(nullable = true)
+    private Double altitude;
 
     private Double humidity;
 
@@ -63,11 +63,11 @@ public class SensorMeasure {
         this.pression = pression;
     }
 
-    public double getAltitude() {
+    public Double getAltitude() {
         return altitude;
     }
 
-    public void setAltitude(double altitude) {
+    public void setAltitude(Double altitude) {
         this.altitude = altitude;
     }
 
