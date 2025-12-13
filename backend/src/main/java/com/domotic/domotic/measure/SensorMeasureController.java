@@ -29,13 +29,15 @@ public class SensorMeasureController {
     @PostMapping
     @ResponseStatus(HttpStatus.CREATED)
     public SensorMeasure create(@Validated @RequestBody SensorMeasureRequest request) {
-        SensorMeasure measure = new SensorMeasure();
-        measure.setSensorName(request.getSensorName());
-        measure.setTemperature(request.getTemperature());
-        measure.setPression(request.getPression());
-        measure.setAltitude(request.getAltitude());
-        measure.setHumidity(request.getHumidity());
-        measure.setTimestamp(request.getTimestamp());
+        SensorMeasure measure = SensorMeasure.builder()
+                .sensorName(request.getSensorName())
+                .temperature(request.getTemperature())
+                .humidity(request.getHumidity())
+                .pression(request.getPression())
+                .altitude(request.getAltitude())
+                .timestamp(request.getTimestamp())
+                .build();
+
         return repository.save(measure);
     }
 }
