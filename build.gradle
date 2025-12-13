@@ -6,7 +6,12 @@ plugins {
 
 group = 'com.domotic'
 version = '0.0.1-SNAPSHOT'
-sourceCompatibility = '17'
+
+java {
+    toolchain {
+        languageVersion = JavaLanguageVersion.of(17)
+    }
+}
 
 tasks.withType(JavaCompile).configureEach {
     options.encoding = 'UTF-8'
@@ -30,6 +35,6 @@ dependencies {
     testImplementation 'com.h2database:h2'
 }
 
-test {
+tasks.withType(Test).configureEach {
     useJUnitPlatform()
 }
