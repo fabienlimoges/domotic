@@ -25,6 +25,17 @@ services:
       - "8080:8080"
     restart: unless-stopped
 
+  frontend:
+    build:
+      context: ./frontend
+      args:
+        API_BASE_URL: ""
+    depends_on:
+      - app
+    ports:
+      - "8081:80"
+    restart: unless-stopped
+
   pgadmin:
     image: dpage/pgadmin4:8
     environment:

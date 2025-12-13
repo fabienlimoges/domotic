@@ -22,6 +22,7 @@ Application Spring Boot (Gradle) permettant d'exposer la route `POST /sensor/mea
 docker compose up --build
 ```
 - API : http://localhost:8080
+- Frontend : http://localhost:8081
 - pgAdmin : http://localhost:5050 (login `admin@example.com` / mot de passe `admin`)
   - Ajouter un serveur dans l'interface pgAdmin vers `db` port `5432` avec l'utilisateur/mot de passe `domotic`.
 
