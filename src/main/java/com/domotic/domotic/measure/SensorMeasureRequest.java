@@ -2,6 +2,7 @@ package com.domotic.domotic.measure;
 
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
+import java.time.OffsetDateTime;
 
 public class SensorMeasureRequest {
 
@@ -19,7 +20,7 @@ public class SensorMeasureRequest {
 
     private Double humidity;
 
-    private String timestamp;
+    private OffsetDateTime measureTime;
 
     public String getSensorName() {
         return sensorName;
@@ -61,11 +62,11 @@ public class SensorMeasureRequest {
         this.humidity = humidity;
     }
 
-    public String getTimestamp() {
-        return timestamp;
+    public OffsetDateTime getMeasureTime() {
+        return measureTime;
     }
 
-    public void setTimestamp(String timestamp) {
-        this.timestamp = timestamp;
+    public void setMeasureTime(OffsetDateTime measureTime) {
+        this.measureTime = measureTime;
     }
 }
