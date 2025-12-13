@@ -1,6 +1,6 @@
 # Domotic sensor server
 
-Application Spring Boot permettant d'exposer la route `POST /sensor/measure` pour enregistrer des mesures de capteurs dans une base PostgreSQL.
+Application Spring Boot (Gradle) permettant d'exposer la route `POST /sensor/measure` pour enregistrer des mesures de capteurs dans une base PostgreSQL.
 
 ## Payload attendu
 ```json
@@ -21,7 +21,9 @@ Application Spring Boot permettant d'exposer la route `POST /sensor/measure` pou
 ```bash
 docker compose up --build
 ```
-L'API est alors disponible sur http://localhost:8080.
+- API : http://localhost:8080
+- pgAdmin : http://localhost:5050 (login `admin@example.com` / mot de passe `admin`)
+  - Ajouter un serveur dans l'interface pgAdmin vers `db` port `5432` avec l'utilisateur/mot de passe `domotic`.
 
 Pour tester rapidement :
 ```bash
@@ -41,7 +43,7 @@ curl -X POST http://localhost:8080/sensor/measure \
 - Postgres local sur `jdbc:postgresql://localhost:5432/domotic` avec utilisateur/mot de passe `domotic` (surchargable via variables d'environnement `DB_URL`, `DB_USERNAME`, `DB_PASSWORD`).
 - Port d'écoute configurable via `SERVER_PORT` (défaut 8080).
 
-## Tests
+## Build et tests
 ```bash
-mvn test
+gradle test
 ```
