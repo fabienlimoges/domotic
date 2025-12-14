@@ -2,16 +2,28 @@ import { SensorCardProps } from "@/types/sensor";
 import { Droplets, Mountain, Gauge, Leaf } from "lucide-react";
 import { formatDistanceToNow } from "date-fns";
 import { fr } from "date-fns/locale";
+import TemperatureHistoryChart from "@/components/TemperatureHistoryChart";
+import { buildMockHistory, useTemperatureHistory } from "@/hooks/useTemperatureHistory";
+import { parseMeasuredAt } from "@/lib/parseMeasuredAt";
 
 const SensorCard = ({ sensor, staleThresholdMinutes = 60 }: SensorCardProps) => {
-  const measureDate = sensor.measuredAt ? new Date(sensor.measuredAt) : null;
-  const isStale = measureDate 
-    ? (Date.now() - measureDate.getTime()) > staleThresholdMinutes * 60 * 1000 
+  const measureDate = parseMeasuredAt(sensor.measuredAt);
+  const isStale = measureDate
+    ? (Date.now() - measureDate.getTime()) > staleThresholdMinutes * 60 * 1000
     : false;
 
-  const timeAgo = measureDate 
+  const timeAgo = measureDate
     ? formatDistanceToNow(measureDate, { addSuffix: true, locale: fr })
     : "Date inconnue";
+
+  const {
+    data: history,
+    isLoading: isHistoryLoading,
+    isError: isHistoryError,
+  } = useTemperatureHistory(sensor.sensorName, 24);
+
+  const historyPoints = isHistoryError ? buildMockHistory(sensor.temperature) : history ?? [];
+  const showHistorySpinner = isHistoryLoading && historyPoints.length === 0;
 
   return (
     <article 
@@ -41,6 +53,14 @@ const SensorCard = ({ sensor, staleThresholdMinutes = 60 }: SensorCardProps) => 
           </span>
           <span className="temperature-unit">°C</span>
         </div>
+      </div>
+
+      <div className="mb-6">
+        <TemperatureHistoryChart
+          sensorName={sensor.sensorName}
+          history={historyPoints}
+          isLoading={showHistorySpinner}
+        />
       </div>
 
       {/* Secondary metrics */}

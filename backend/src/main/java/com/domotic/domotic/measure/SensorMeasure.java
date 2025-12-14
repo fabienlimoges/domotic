@@ -1,5 +1,7 @@
 package com.domotic.domotic.measure;
 
+import com.fasterxml.jackson.annotation.JsonFormat;
+import com.fasterxml.jackson.annotation.JsonProperty;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.GeneratedValue;
@@ -10,6 +12,8 @@ import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
+
+import java.time.Instant;
 
 @Entity
 @Table(name = "sensor_measure")
@@ -37,5 +41,8 @@ public class SensorMeasure {
 
     private Double humidity;
 
-    private String timestamp;
+    @Column(name = "measured_at", nullable = false)
+    @JsonProperty("measuredAt")
+    @JsonFormat(shape = JsonFormat.Shape.STRING)
+    private Instant measuredAt;
 }

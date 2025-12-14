@@ -1,8 +1,11 @@
 package com.domotic.domotic.measure;
 
+import com.fasterxml.jackson.annotation.JsonAlias;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
 import lombok.*;
+
+import java.time.Instant;
 
 @Getter
 @Setter
@@ -24,5 +27,6 @@ public class SensorMeasureRequest {
 
     private Double humidity;
 
-    private String timestamp;
+    @JsonAlias({"timestamp"})
+    private Instant measuredAt;
 }

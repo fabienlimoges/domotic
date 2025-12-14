@@ -5,7 +5,7 @@ export interface SensorMeasure {
   pression: number;
   altitude?: number | null;
   humidity?: number;
-  measuredAt?: string;
+  measuredAt?: string | number;
 }
 
 export interface SensorCardProps {
