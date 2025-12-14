@@ -177,5 +177,4 @@ jobs:
                             f"Failed to delete {repo}:{tag}: {del_resp.status_code} {del_resp.text}",
                             file=sys.stderr,
                         )
-
 PY
