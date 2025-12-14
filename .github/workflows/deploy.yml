@@ -140,39 +140,42 @@ jobs:
         if: env.DOCKERHUB_USERNAME != '' && env.DOCKERHUB_TOKEN != ''
         run: |
           python3 - <<'PY'
-import requests
-import sys
-from datetime import datetime
+            import requests
+            import sys
+            from datetime import datetime
 
-auth = ("${DOCKERHUB_USERNAME}", "${DOCKERHUB_TOKEN}")
-repos = ["domotic-backend", "domotic-frontend"]
-keep = 5
-base = "https://hub.docker.com/v2/repositories/{username}/{repo}/tags".format
+            auth = ("${DOCKERHUB_USERNAME}", "${DOCKERHUB_TOKEN}")
+            repos = ["domotic-backend", "domotic-frontend"]
+            keep = 5
+            base = "https://hub.docker.com/v2/repositories/{username}/{repo}/tags".format
 
-session = requests.Session()
-session.auth = auth
+            session = requests.Session()
+            session.auth = auth
 
-for repo in repos:
-    tags_url = base(username="${DOCKERHUB_USERNAME}", repo=repo)
-    tags = []
-    url = tags_url
-    while url:
-        resp = session.get(url)
-        resp.raise_for_status()
-        data = resp.json()
-        tags.extend(
-            [
-                (result["name"], result.get("last_updated"))
-                for result in data.get("results", [])
-            ]
-        )
-        url = data.get("next")
-    tags.sort(key=lambda t: t[1] or datetime.min.isoformat(), reverse=True)
-    prune = [t[0] for t in tags if t[0] not in ("latest", "sha")]
-    for tag in prune[keep:]:
-        delete_url = f"{tags_url}/{tag}/"
-        del_resp = session.delete(delete_url)
-        if del_resp.status_code not in (200, 202, 204):
-            print(f"Failed to delete {repo}:{tag}: {del_resp.status_code} {del_resp.text}", file=sys.stderr)
-          
+            for repo in repos:
+                tags_url = base(username="${DOCKERHUB_USERNAME}", repo=repo)
+                tags = []
+                url = tags_url
+                while url:
+                    resp = session.get(url)
+                    resp.raise_for_status()
+                    data = resp.json()
+                    tags.extend(
+                        [
+                            (result["name"], result.get("last_updated"))
+                            for result in data.get("results", [])
+                        ]
+                    )
+                    url = data.get("next")
+                tags.sort(key=lambda t: t[1] or datetime.min.isoformat(), reverse=True)
+                prune = [t[0] for t in tags if t[0] not in ("latest", "sha")]
+                for tag in prune[keep:]:
+                    delete_url = f"{tags_url}/{tag}/"
+                    del_resp = session.delete(delete_url)
+                    if del_resp.status_code not in (200, 202, 204):
+                        print(
+                            f"Failed to delete {repo}:{tag}: {del_resp.status_code} {del_resp.text}",
+                            file=sys.stderr,
+                        )
+
 PY
