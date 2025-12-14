@@ -30,7 +30,9 @@ jobs:
           context: backend
           file: backend/Dockerfile
           push: true
-          tags: ${{ secrets.DOCKERHUB_USERNAME }}/domotic-backend:latest
+          tags: |
+            ${{ secrets.DOCKERHUB_USERNAME }}/domotic-backend:latest
+            ${{ secrets.DOCKERHUB_USERNAME }}/domotic-backend:${{ github.ref_name }}
 
   docker-frontend:
     name: Build & publish frontend
@@ -52,4 +54,6 @@ jobs:
           context: frontend
           file: frontend/Dockerfile
           push: true
-          tags: ${{ secrets.DOCKERHUB_USERNAME }}/domotic-frontend:latest
+          tags: |
+            ${{ secrets.DOCKERHUB_USERNAME }}/domotic-frontend:latest
+            ${{ secrets.DOCKERHUB_USERNAME }}/domotic-frontend:${{ github.ref_name }}

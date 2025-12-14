@@ -1,0 +1,178 @@
+name: Deploy
+
+on:
+  push:
+    branches:
+      - main
+    tags:
+      - v*
+  workflow_dispatch:
+  schedule:
+    - cron: '0 4 * * 0'
+
+permissions:
+  contents: read
+
+concurrency:
+  group: deploy-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Validate compose file
+        run: docker compose -f docker-compose.yml config
+
+  deploy:
+    needs: build
+    runs-on: ubuntu-latest
+    env:
+      DEPLOY_ENV: ${{ startsWith(github.ref, 'refs/tags/') && 'prod' || 'staging' }}
+      DEPLOY_IMAGE_TAG: ${{ github.ref_name }}
+      TELEGRAM_TOKEN: ${{ secrets.TELEGRAM_TOKEN || '' }}
+      TELEGRAM_CHAT_ID: ${{ secrets.TELEGRAM_CHAT_ID || '' }}
+      DOCKERHUB_USERNAME: ${{ secrets.DOCKERHUB_USERNAME || '' }}
+      DOCKERHUB_TOKEN: ${{ secrets.DOCKERHUB_TOKEN || '' }}
+    environment:
+      name: ${{ startsWith(github.ref, 'refs/tags/') && 'prod' || 'staging' }}
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Deploy over SSH
+        id: deploy
+        uses: appleboy/ssh-action@v1.0.3
+        env:
+          DOCKERHUB_USERNAME: ${{ env.DOCKERHUB_USERNAME }}
+          DOCKERHUB_TOKEN: ${{ env.DOCKERHUB_TOKEN }}
+          DEPLOY_IMAGE_TAG: ${{ env.DEPLOY_IMAGE_TAG }}
+        with:
+          host: ${{ secrets.SSH_HOST }}
+          username: ${{ secrets.SSH_USER }}
+          key: ${{ secrets.SSH_PRIVATE_KEY }}
+          script_stop: true
+          envs: DOCKERHUB_USERNAME,DOCKERHUB_TOKEN,DEPLOY_IMAGE_TAG,GITHUB_REF_NAME,GITHUB_REPOSITORY
+          script: |
+            set -euo pipefail
+            REPO_DIR="/opt/domotic"
+            if [ -d "$REPO_DIR/.git" ]; then
+              git -C "$REPO_DIR" fetch --all --prune
+              git -C "$REPO_DIR" checkout --quiet "${GITHUB_REF_NAME}" || git -C "$REPO_DIR" checkout --quiet main
+              git -C "$REPO_DIR" pull --ff-only origin "${GITHUB_REF_NAME}" || git -C "$REPO_DIR" pull --ff-only origin main || true
+            else
+              git clone -q https://github.com/${GITHUB_REPOSITORY}.git "$REPO_DIR"
+              git -C "$REPO_DIR" checkout --quiet "${GITHUB_REF_NAME}" || git -C "$REPO_DIR" checkout --quiet main || true
+            fi
+
+            cd "$REPO_DIR"
+            if [ -n "${DOCKERHUB_TOKEN:-}" ] && [ -n "${DOCKERHUB_USERNAME:-}" ]; then
+              echo "${DOCKERHUB_TOKEN}" | docker login -u "${DOCKERHUB_USERNAME}" --password-stdin
+            fi
+
+            export BACKEND_TAG="${DEPLOY_IMAGE_TAG}"
+            export FRONTEND_TAG="${DEPLOY_IMAGE_TAG}"
+
+            docker compose pull app frontend
+            docker compose up -d --remove-orphans
+
+      - name: Healthcheck
+        id: healthcheck
+        uses: appleboy/ssh-action@v1.0.3
+        with:
+          host: ${{ secrets.SSH_HOST }}
+          username: ${{ secrets.SSH_USER }}
+          key: ${{ secrets.SSH_PRIVATE_KEY }}
+          script_stop: true
+          script: |
+            set -euo pipefail
+            cd /opt/domotic
+            if ! curl -fsS http://localhost/health; then
+              echo "Health endpoint unavailable, inspecting running services"
+              docker compose ps --status=running
+              running=$(docker compose ps --status=running | tail -n +2 | wc -l)
+              if [ "$running" -lt 1 ]; then
+                echo "Services not healthy"
+                exit 1
+              fi
+            fi
+
+      - name: Notify deploy status to Telegram
+        if: env.TELEGRAM_TOKEN != '' && env.TELEGRAM_CHAT_ID != ''
+        env:
+          TELEGRAM_TOKEN: ${{ env.TELEGRAM_TOKEN }}
+          TELEGRAM_CHAT_ID: ${{ env.TELEGRAM_CHAT_ID }}
+        run: |
+          set -euo pipefail
+          STATUS_ICON="${{ job.status == 'success' && '✅' || '❌' }}"
+          STATUS_TEXT="${{ job.status == 'success' && 'réussi' || 'échoué' }}"
+          MESSAGE="${STATUS_ICON} Déploiement ${DEPLOY_IMAGE_TAG} ${STATUS_TEXT} sur ${DEPLOY_ENV}."
+          curl -sS -X POST \
+            "https://api.telegram.org/bot${TELEGRAM_TOKEN}/sendMessage" \
+            -d chat_id="${TELEGRAM_CHAT_ID}" \
+            -d text="${MESSAGE}"
+
+  cleanup:
+    if: github.event_name == 'schedule'
+    runs-on: ubuntu-latest
+    env:
+      DOCKERHUB_USERNAME: ${{ secrets.DOCKERHUB_USERNAME || '' }}
+      DOCKERHUB_TOKEN: ${{ secrets.DOCKERHUB_TOKEN || '' }}
+    environment:
+      name: prod
+    steps:
+      - name: Cleanup on host
+        uses: appleboy/ssh-action@v1.0.3
+        with:
+          host: ${{ secrets.SSH_HOST }}
+          username: ${{ secrets.SSH_USER }}
+          key: ${{ secrets.SSH_PRIVATE_KEY }}
+          script_stop: true
+          envs: DOCKERHUB_USERNAME,DOCKERHUB_TOKEN
+          script: |
+            set -euo pipefail
+            docker system prune -af --volumes
+
+      - name: Remove old Docker Hub tags
+        if: env.DOCKERHUB_USERNAME != '' && env.DOCKERHUB_TOKEN != ''
+        run: |
+          python3 - <<'PY'
+import requests
+import sys
+from datetime import datetime
+
+auth = ("${DOCKERHUB_USERNAME}", "${DOCKERHUB_TOKEN}")
+repos = ["domotic-backend", "domotic-frontend"]
+keep = 5
+base = "https://hub.docker.com/v2/repositories/{username}/{repo}/tags".format
+
+session = requests.Session()
+session.auth = auth
+
+for repo in repos:
+    tags_url = base(username="${DOCKERHUB_USERNAME}", repo=repo)
+    tags = []
+    url = tags_url
+    while url:
+        resp = session.get(url)
+        resp.raise_for_status()
+        data = resp.json()
+        tags.extend(
+            [
+                (result["name"], result.get("last_updated"))
+                for result in data.get("results", [])
+            ]
+        )
+        url = data.get("next")
+    tags.sort(key=lambda t: t[1] or datetime.min.isoformat(), reverse=True)
+    prune = [t[0] for t in tags if t[0] not in ("latest", "sha")]
+    for tag in prune[keep:]:
+        delete_url = f"{tags_url}/{tag}/"
+        del_resp = session.delete(delete_url)
+        if del_resp.status_code not in (200, 202, 204):
+            print(f"Failed to delete {repo}:{tag}: {del_resp.status_code} {del_resp.text}", file=sys.stderr)
+          
+PY
