@@ -1,0 +1,45 @@
+name: Deploy
+
+on:
+  workflow_run:
+    workflows: ["Build and Publish Docker image"]  # <-- le name: de ton workflow build
+    types: [completed]
+
+jobs:
+  deploy:
+    if: ${{ github.event.workflow_run.conclusion == 'success' }}
+    runs-on: ubuntu-latest
+    steps:
+      - name: Compute tag
+        id: vars
+        run: |
+          # on déploie l'image correspondant au commit du workflow précédent
+          echo "tag=sha-${{ github.event.workflow_run.head_sha }}" >> "$GITHUB_OUTPUT"
+
+      - name: Configure SSH
+        run: |
+          mkdir -p ~/.ssh
+          echo "${{ secrets.SSH_PRIVATE_KEY }}" > ~/.ssh/id_ed25519
+          chmod 600 ~/.ssh/id_ed25519
+          echo "${{ secrets.SSH_KNOWN_HOSTS }}" > ~/.ssh/known_hosts
+          chmod 600 ~/.ssh/known_hosts
+
+      - name: Deploy
+        run: |
+          ssh -p "${{ secrets.SSH_PORT }}" "${{ secrets.SSH_USER }}@${{ secrets.SSH_HOST }}" \
+            "/opt/mon-app/deploy.sh '${{ steps.vars.outputs.tag }}'"
+
+      - name: Notify deploy status to Telegram
+        if: env.TELEGRAM_TOKEN != '' && env.TELEGRAM_CHAT_ID != ''
+        env:
+          TELEGRAM_TOKEN: ${{ env.TELEGRAM_TOKEN }}
+          TELEGRAM_CHAT_ID: ${{ env.TELEGRAM_CHAT_ID }}
+        run: |
+          set -euo pipefail
+          STATUS_ICON="${{ job.status == 'success' && '✅' || '❌' }}"
+          STATUS_TEXT="${{ job.status == 'success' && 'réussi' || 'échoué' }}"
+          MESSAGE="${STATUS_ICON} Déploiement ${DEPLOY_IMAGE_TAG} ${STATUS_TEXT} sur ${DEPLOY_ENV}."
+          curl -sS -X POST \
+            "https://api.telegram.org/bot${TELEGRAM_TOKEN}/sendMessage" \
+            -d chat_id="${TELEGRAM_CHAT_ID}" \
+            -d text="${MESSAGE}"
