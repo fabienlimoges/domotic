@@ -13,7 +13,7 @@ services:
       - postgres_data:/var/lib/postgresql/data
 
   app:
-    image: fabien31520/domotic-backend:latest
+    image: fabien31520/domotic-backend:${BACKEND_TAG:-latest}
     depends_on:
       - db
     environment:
@@ -26,7 +26,7 @@ services:
     restart: unless-stopped
 
   frontend:
-    image: fabien31520/domotic-frontend:latest
+    image: fabien31520/domotic-frontend:${FRONTEND_TAG:-latest}
     depends_on:
       - app
     ports:
