@@ -6,11 +6,9 @@ const fetchTemperatureHistory = async (
   hours: number,
 ): Promise<SensorMeasure[]> => {
   const params = new URLSearchParams({ hours: hours.toString() });
-  if (sensorName) {
-    params.append("sensorName", sensorName);
-  }
-
-  const response = await fetch(`/sensor/measure/history?${params.toString()}`);
+  const response = await fetch(
+    `/sensor/measure/history/${encodeURIComponent(sensorName)}?${params.toString()}`,
+  );
 
   if (!response.ok) {
     throw new Error("Failed to fetch temperature history");
@@ -19,12 +17,17 @@ const fetchTemperatureHistory = async (
   return response.json();
 };
 
-export const useTemperatureHistory = (sensorName: string, hours = 24) => {
+export const useTemperatureHistory = (
+  sensorName: string,
+  hours = 24,
+  enabled = false,
+) => {
   return useQuery({
     queryKey: ["temperatureHistory", sensorName, hours],
     queryFn: () => fetchTemperatureHistory(sensorName, hours),
+    enabled: Boolean(sensorName) && enabled,
     staleTime: 60_000,
-    refetchInterval: 60_000,
+    refetchInterval: enabled ? 60_000 : false,
   });
 };
 
