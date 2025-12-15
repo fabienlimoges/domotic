@@ -17,6 +17,8 @@ type TemperatureHistoryChartProps = {
   sensorName: string;
   history: SensorMeasure[];
   isLoading: boolean;
+  isIdle?: boolean;
+  isError?: boolean;
 };
 
 type ChartPoint = {
@@ -27,7 +29,13 @@ type ChartPoint = {
 
 const formatTime = (date: Date) => format(date, "HH:mm", { locale: fr });
 
-const TemperatureHistoryChart = ({ sensorName, history, isLoading }: TemperatureHistoryChartProps) => {
+const TemperatureHistoryChart = ({
+  sensorName,
+  history,
+  isLoading,
+  isIdle = false,
+  isError = false,
+}: TemperatureHistoryChartProps) => {
   const chartData: ChartPoint[] = useMemo(
     () =>
       history
@@ -45,7 +53,7 @@ const TemperatureHistoryChart = ({ sensorName, history, isLoading }: Temperature
     [history],
   );
 
-  const isEmpty = !isLoading && chartData.length === 0;
+  const isEmpty = !isLoading && !isIdle && chartData.length === 0;
 
   return (
     <div className="rounded-2xl border border-border bg-muted/40 p-4">
@@ -62,9 +70,21 @@ const TemperatureHistoryChart = ({ sensorName, history, isLoading }: Temperature
       </div>
 
       <div className="h-36">
+        {isIdle && (
+          <div className="flex h-full items-center justify-center text-sm text-muted-foreground">
+            <p>Cliquez sur "Afficher" pour charger l'historique.</p>
+          </div>
+        )}
+
         {isLoading && (
           <div className="flex h-full items-center justify-center text-muted-foreground">
             <Loader2 className="h-5 w-5 animate-spin" />
+          </div>
+        )}
+
+        {isError && !isLoading && !isIdle && (
+          <div className="flex h-full flex-col items-center justify-center text-sm text-muted-foreground">
+            <p>Historique indisponible · données de secours affichées.</p>
           </div>
         )}
 
@@ -74,7 +94,7 @@ const TemperatureHistoryChart = ({ sensorName, history, isLoading }: Temperature
           </div>
         )}
 
-        {!isLoading && !isEmpty && (
+        {!isLoading && !isIdle && !isEmpty && (
           <ResponsiveContainer width="100%" height="100%">
             <AreaChart data={chartData} margin={{ left: 4, right: 4, top: 10, bottom: 0 }}>
               <defs>

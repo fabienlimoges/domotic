@@ -14,8 +14,8 @@ public interface SensorMeasureRepository extends JpaRepository<SensorMeasure, Lo
     List<SensorMeasure> findLatestMeasuresPerSensor();
 
     @Query(value = "SELECT sm.* FROM sensor_measure sm " +
-            "WHERE sm.measured_at >= NOW() - (:hours * INTERVAL '1 hour') " +
-            "AND (:sensorName IS NULL OR sm.sensor_name = :sensorName) " +
+            "WHERE sm.sensor_name = :sensorName " +
+            "AND sm.measured_at >= NOW() - (:hours * INTERVAL '1 hour') " +
             "ORDER BY sm.measured_at ASC", nativeQuery = true)
-    List<SensorMeasure> findMeasuresWithinLastHours(@Param("hours") int hours, @Param("sensorName") String sensorName);
+    List<SensorMeasure> findMeasuresWithinLastHoursForSensor(@Param("hours") int hours, @Param("sensorName") String sensorName);
 }

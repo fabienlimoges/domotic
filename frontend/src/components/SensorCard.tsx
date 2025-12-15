@@ -1,3 +1,4 @@
+import { useMemo, useState } from "react";
 import { SensorCardProps } from "@/types/sensor";
 import { Droplets, Mountain, Gauge, Leaf } from "lucide-react";
 import { formatDistanceToNow } from "date-fns";
@@ -5,6 +6,7 @@ import { fr } from "date-fns/locale";
 import TemperatureHistoryChart from "@/components/TemperatureHistoryChart";
 import { buildMockHistory, useTemperatureHistory } from "@/hooks/useTemperatureHistory";
 import { parseMeasuredAt } from "@/lib/parseMeasuredAt";
+import { Button } from "@/components/ui/button";
 
 const SensorCard = ({ sensor, staleThresholdMinutes = 60 }: SensorCardProps) => {
   const measureDate = parseMeasuredAt(sensor.measuredAt);
@@ -16,14 +18,29 @@ const SensorCard = ({ sensor, staleThresholdMinutes = 60 }: SensorCardProps) => 
     ? formatDistanceToNow(measureDate, { addSuffix: true, locale: fr })
     : "Date inconnue";
 
+  const [historyEnabled, setHistoryEnabled] = useState(false);
   const {
     data: history,
     isLoading: isHistoryLoading,
+    isFetching: isHistoryFetching,
     isError: isHistoryError,
-  } = useTemperatureHistory(sensor.sensorName, 24);
+    isIdle: isHistoryIdle,
+    refetch: refetchHistory,
+  } = useTemperatureHistory(sensor.sensorName, 24, historyEnabled);
 
-  const historyPoints = isHistoryError ? buildMockHistory(sensor.temperature) : history ?? [];
-  const showHistorySpinner = isHistoryLoading && historyPoints.length === 0;
+  const historyPoints = useMemo(
+    () => (isHistoryError ? buildMockHistory(sensor.temperature) : history ?? []),
+    [history, isHistoryError, sensor.temperature],
+  );
+  const showHistorySpinner = (isHistoryLoading || isHistoryFetching) && historyPoints.length === 0;
+
+  const handleHistoryClick = () => {
+    if (!historyEnabled) {
+      setHistoryEnabled(true);
+    } else {
+      refetchHistory();
+    }
+  };
 
   return (
     <article 
@@ -55,11 +72,25 @@ const SensorCard = ({ sensor, staleThresholdMinutes = 60 }: SensorCardProps) => 
         </div>
       </div>
 
-      <div className="mb-6">
+      <div className="mb-6 space-y-3">
+        <div className="flex items-center justify-between">
+          <p className="text-sm text-muted-foreground">Évolution sur 24h</p>
+          <Button
+            variant="secondary"
+            size="sm"
+            onClick={handleHistoryClick}
+            disabled={isHistoryLoading || isHistoryFetching}
+          >
+            {historyEnabled ? "Actualiser" : "Afficher"}
+          </Button>
+        </div>
+
         <TemperatureHistoryChart
           sensorName={sensor.sensorName}
           history={historyPoints}
           isLoading={showHistorySpinner}
+          isIdle={!historyEnabled || isHistoryIdle}
+          isError={isHistoryError}
         />
       </div>
 
