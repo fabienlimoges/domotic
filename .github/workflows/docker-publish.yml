@@ -10,6 +10,24 @@ permissions:
   contents: read
 
 jobs:
+  
+  notify:
+    name : Notify Telegram
+    runs-on: ubuntu-latest
+    steps:
+      - name: Notify deploy status to Telegram
+        if: env.TELEGRAM_TOKEN != '' && env.TELEGRAM_CHAT_ID != ''
+        env:
+          TELEGRAM_TOKEN: ${{ env.TELEGRAM_TOKEN }}
+          TELEGRAM_CHAT_ID: ${{ env.TELEGRAM_CHAT_ID }}
+        run: |
+          set -euo pipefail
+          MESSAGE="Message test"
+          curl -sS -X POST \
+            "https://api.telegram.org/bot${TELEGRAM_TOKEN}/sendMessage" \
+            -d chat_id="${TELEGRAM_CHAT_ID}" \
+             -d text="${MESSAGE}"
+
   docker-backend:
     name: Build & publish backend
     runs-on: ubuntu-latest
