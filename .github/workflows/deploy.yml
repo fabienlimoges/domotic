@@ -27,7 +27,7 @@ jobs:
       - name: Deploy
         run: |
           ssh -p "${{ secrets.SSH_PORT }}" "${{ secrets.SSH_USER }}@${{ secrets.SSH_HOST }}" \
-            "/opt/mon-app/deploy.sh '${{ steps.vars.outputs.tag }}'"
+            "/opt/domotic/deploy.sh '${{ steps.vars.outputs.tag }}'"
 
       - name: Notify deploy status to Telegram
         if: env.TELEGRAM_TOKEN != '' && env.TELEGRAM_CHAT_ID != ''
