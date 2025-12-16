@@ -74,14 +74,14 @@ const SensorCard = ({ sensor, staleThresholdMinutes = 60 }: SensorCardProps) => 
 
       <div className="mb-6 space-y-3">
         <div className="flex items-center justify-between">
-          <p className="text-sm text-muted-foreground">Évolution sur 24h</p>
           <Button
-            variant="secondary"
+            variant="ghost"
             size="sm"
+            className="h-auto px-0 text-sm font-medium text-foreground"
             onClick={handleHistoryClick}
             disabled={isHistoryLoading || isHistoryFetching}
           >
-            {historyEnabled ? "Actualiser" : "Afficher"}
+            Évolution sur 24h
           </Button>
         </div>
 
