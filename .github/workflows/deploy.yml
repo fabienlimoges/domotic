@@ -24,6 +24,8 @@ jobs:
     if: ${{ github.event.workflow_run.conclusion == 'success' }}
     runs-on: ubuntu-latest
     steps:
+      - uses: actions/checkout@v4
+      
       - name: Compute tag
         id: vars
         run: |
@@ -43,7 +45,7 @@ jobs:
           ssh -p "${{ secrets.SSH_PORT }}" "${{ secrets.SSH_USER }}@${{ secrets.SSH_HOST }}" \
             "/opt/domotic/deploy.sh '${{ steps.vars.outputs.tag }}'"
       
-      - name: Notify
+      - name: Notify success
         if: success()
         uses: ./.github/actions/telegram-notify
         with:
@@ -51,7 +53,7 @@ jobs:
           chat_id: ${{ secrets.TELEGRAM_CHAT_ID }}
           message: "✅ Successfully deployed"
       
-      - name: Notify (backend ❌)
+      - name: Notify failure
         if: failure()
         uses: ./.github/actions/telegram-notify
         with:
