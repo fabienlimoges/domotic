@@ -15,6 +15,9 @@ jobs:
     name: Notify Telegram (start)
     runs-on: ubuntu-latest
     steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+    
       - name: Notify CI start
         uses: ./.github/actions/telegram-notify
         with:
@@ -95,7 +98,7 @@ jobs:
         with:
           token: ${{ secrets.TELEGRAM_TOKEN }}
           chat_id: ${{ secrets.TELEGRAM_CHAT_ID }}
-          message: "✅ Backend image pushed: sha-${{ github.sha }}"
+          message: "✅ Fronted image pushed: sha-${{ github.sha }}"
           
       - name: Notify (frontend ❌)
         if: failure()
@@ -103,5 +106,5 @@ jobs:
         with:
           token: ${{ secrets.TELEGRAM_TOKEN }}
           chat_id: ${{ secrets.TELEGRAM_CHAT_ID }}
-          message: "❌ Backend job failed: ${{ github.repository }} @ sha=${{ github.sha }} (see Actions logs)"
+          message: "❌ Fronted job failed: ${{ github.repository }} @ sha=${{ github.sha }} (see Actions logs)"
 
