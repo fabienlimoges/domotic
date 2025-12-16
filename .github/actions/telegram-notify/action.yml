@@ -1,0 +1,28 @@
+name: "Telegram notify"
+description: "Send a Telegram message"
+inputs:
+  token:
+    required: true
+  chat_id:
+    required: true
+  message:
+    required: true
+
+runs:
+  using: "composite"
+  steps:
+    - shell: bash
+      run: |
+        set -euo pipefail
+        TOKEN="${{ inputs.token }}"
+        CHAT="${{ inputs.chat_id }}"
+        MSG="${{ inputs.message }}"
+
+        if [[ -z "$TOKEN" || -z "$CHAT" ]]; then
+          echo "Telegram secrets missing, skipping."
+          exit 0
+        fi
+
+        curl -sS -X POST "https://api.telegram.org/bot${TOKEN}/sendMessage" \
+          -d chat_id="${CHAT}" \
+          -d text="${MSG}" > /dev/null
