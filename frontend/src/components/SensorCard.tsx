@@ -85,13 +85,15 @@ const SensorCard = ({ sensor, staleThresholdMinutes = 60 }: SensorCardProps) => 
           </Button>
         </div>
 
-        <TemperatureHistoryChart
-          sensorName={sensor.sensorName}
-          history={historyPoints}
-          isLoading={showHistorySpinner}
-          isIdle={!historyEnabled || isHistoryIdle}
-          isError={isHistoryError}
-        />
+        {historyEnabled && (
+          <TemperatureHistoryChart
+            sensorName={sensor.sensorName}
+            history={historyPoints}
+            isLoading={showHistorySpinner}
+            isIdle={isHistoryIdle}
+            isError={isHistoryError}
+          />
+        )}
       </div>
 
       {/* Secondary metrics */}
