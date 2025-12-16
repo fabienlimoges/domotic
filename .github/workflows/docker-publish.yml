@@ -10,26 +10,18 @@ permissions:
   contents: read
 
 jobs:
-  
+
   notify:
-    name : Notify Telegram
+    name: Notify Telegram (start)
     runs-on: ubuntu-latest
-    env:
-      TELEGRAM_TOKEN: ${{ secrets.TELEGRAM_TOKEN || '' }}
-      TELEGRAM_CHAT_ID: ${{ secrets.TELEGRAM_CHAT_ID || '' }}
     steps:
-      - name: Notify deploy status to Telegram
-        if: env.TELEGRAM_TOKEN != '' && env.TELEGRAM_CHAT_ID != ''
-        env:
-          TELEGRAM_TOKEN: ${{ env.TELEGRAM_TOKEN }}
-          TELEGRAM_CHAT_ID: ${{ env.TELEGRAM_CHAT_ID }}
-        run: |
-          set -euo pipefail
-          MESSAGE="Starting CI process ..."
-          curl -sS -X POST \
-            "https://api.telegram.org/bot${TELEGRAM_TOKEN}/sendMessage" \
-            -d chat_id="${TELEGRAM_CHAT_ID}" \
-             -d text="${MESSAGE}"
+      - name: Notify CI start
+        uses: ./.github/actions/telegram-notify
+        with:
+          token: ${{ secrets.TELEGRAM_TOKEN }}
+          chat_id: ${{ secrets.TELEGRAM_CHAT_ID }}
+          message: "🚀 CI started: ${{ github.repository }} @ ${{ github.ref_name }} (sha=${{ github.sha }})"
+
 
   docker-backend:
     name: Build & publish backend
@@ -56,6 +48,22 @@ jobs:
             ${{ secrets.DOCKERHUB_USERNAME }}/domotic-backend:sha-${{ github.sha }}
             ${{ secrets.DOCKERHUB_USERNAME }}/domotic-backend:${{ github.ref_name }}
 
+      - name: Notify (backend ✅)
+        if: success()
+        uses: ./.github/actions/telegram-notify
+        with:
+          token: ${{ secrets.TELEGRAM_TOKEN }}
+          chat_id: ${{ secrets.TELEGRAM_CHAT_ID }}
+          message: "✅ Backend image pushed: sha-${{ github.sha }}"
+          
+      - name: Notify (backend ❌)
+        if: failure()
+        uses: ./.github/actions/telegram-notify
+        with:
+          token: ${{ secrets.TELEGRAM_TOKEN }}
+          chat_id: ${{ secrets.TELEGRAM_CHAT_ID }}
+          message: "❌ Backend job failed: ${{ github.repository }} @ sha=${{ github.sha }} (see Actions logs)"
+
   docker-frontend:
     name: Build & publish frontend
     runs-on: ubuntu-latest
@@ -80,3 +88,20 @@ jobs:
             ${{ secrets.DOCKERHUB_USERNAME }}/domotic-frontend:latest
             ${{ secrets.DOCKERHUB_USERNAME }}/domotic-frontend:sha-${{ github.sha }}
             ${{ secrets.DOCKERHUB_USERNAME }}/domotic-frontend:${{ github.ref_name }}
+
+      - name: Notify (frontend ✅)
+        if: success()
+        uses: ./.github/actions/telegram-notify
+        with:
+          token: ${{ secrets.TELEGRAM_TOKEN }}
+          chat_id: ${{ secrets.TELEGRAM_CHAT_ID }}
+          message: "✅ Backend image pushed: sha-${{ github.sha }}"
+          
+      - name: Notify (frontend ❌)
+        if: failure()
+        uses: ./.github/actions/telegram-notify
+        with:
+          token: ${{ secrets.TELEGRAM_TOKEN }}
+          chat_id: ${{ secrets.TELEGRAM_CHAT_ID }}
+          message: "❌ Backend job failed: ${{ github.repository }} @ sha=${{ github.sha }} (see Actions logs)"
+
