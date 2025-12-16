@@ -25,7 +25,7 @@ jobs:
           TELEGRAM_CHAT_ID: ${{ env.TELEGRAM_CHAT_ID }}
         run: |
           set -euo pipefail
-          MESSAGE="Starting docker publish CI"
+          MESSAGE="Starting CI process ..."
           curl -sS -X POST \
             "https://api.telegram.org/bot${TELEGRAM_TOKEN}/sendMessage" \
             -d chat_id="${TELEGRAM_CHAT_ID}" \
@@ -51,7 +51,10 @@ jobs:
           context: backend
           file: backend/Dockerfile
           push: true
-          tags: ${{ secrets.DOCKERHUB_USERNAME }}/domotic-backend:latest
+          tags: |
+            ${{ secrets.DOCKERHUB_USERNAME }}/domotic-backend:latest
+            ${{ secrets.DOCKERHUB_USERNAME }}/domotic-backend:sha-${{ github.sha }}
+            ${{ secrets.DOCKERHUB_USERNAME }}/domotic-backend:${{ github.ref_name }}
 
   docker-frontend:
     name: Build & publish frontend
@@ -73,4 +76,7 @@ jobs:
           context: frontend
           file: frontend/Dockerfile
           push: true
-          tags: ${{ secrets.DOCKERHUB_USERNAME }}/domotic-frontend:latest
+          tags: |
+            ${{ secrets.DOCKERHUB_USERNAME }}/domotic-frontend:latest
+            ${{ secrets.DOCKERHUB_USERNAME }}/domotic-frontend:sha-${{ github.sha }}
+            ${{ secrets.DOCKERHUB_USERNAME }}/domotic-frontend:${{ github.ref_name }}
