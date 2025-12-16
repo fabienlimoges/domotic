@@ -5,9 +5,9 @@ import { Button } from "@/components/ui/button";
 
 const SensorDashboard = () => {
   const { data, isLoading, isError, refetch, isFetching } = useSensorData();
-  
-  // Use mock data if API fails or for demo
-  const sensors = data ?? mockSensorData;
+
+  // Use mock data when available, but never show it on errors
+  const sensors = isError ? [] : data ?? mockSensorData;
 
   return (
     <div className="min-h-screen bg-background">
@@ -43,9 +43,7 @@ const SensorDashboard = () => {
         {isError && (
           <div className="mb-6 flex items-center gap-3 rounded-2xl bg-muted/50 px-4 py-3">
             <CloudOff className="h-4 w-4 text-muted-foreground" />
-            <p className="text-sm text-muted-foreground">
-              Connexion impossible · données en cache
-            </p>
+            <p className="text-sm text-muted-foreground">Connexion impossible</p>
           </div>
         )}
 
@@ -62,7 +60,7 @@ const SensorDashboard = () => {
         )}
 
         {/* Sensor cards */}
-        {!isLoading && (
+        {!isLoading && !isError && (
           <div className="flex flex-col gap-4">
             {sensors.map((sensor) => (
               <SensorCard key={sensor.id} sensor={sensor} staleThresholdMinutes={60} />
@@ -71,7 +69,7 @@ const SensorDashboard = () => {
         )}
 
         {/* Empty state */}
-        {!isLoading && sensors.length === 0 && (
+        {!isLoading && !isError && sensors.length === 0 && (
           <div className="flex flex-col items-center justify-center py-16 text-center">
             <div className="mb-4 flex h-14 w-14 items-center justify-center rounded-full bg-muted">
               <Leaf className="h-6 w-6 text-muted-foreground" />
