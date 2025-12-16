@@ -1,6 +1,6 @@
 import { useMemo, useState } from "react";
 import { SensorCardProps } from "@/types/sensor";
-import { Droplets, Mountain, Gauge, Leaf } from "lucide-react";
+import { Droplets, Gauge, Leaf } from "lucide-react";
 import { formatDistanceToNow } from "date-fns";
 import { fr } from "date-fns/locale";
 import TemperatureHistoryChart from "@/components/TemperatureHistoryChart";
@@ -110,12 +110,6 @@ const SensorCard = ({ sensor, staleThresholdMinutes = 60 }: SensorCardProps) => 
           <span>{sensor.pression.toFixed(0)} hPa</span>
         </div>
 
-        {typeof sensor.altitude === "number" && (
-          <div className="metric-pill">
-            <Mountain className="h-4 w-4 text-bamboo" />
-            <span>{sensor.altitude} m</span>
-          </div>
-        )}
       </footer>
     </article>
   );
