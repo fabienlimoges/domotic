@@ -72,7 +72,7 @@ const TemperatureHistoryChart = ({
       <div className="h-36">
         {isIdle && (
           <div className="flex h-full items-center justify-center text-sm text-muted-foreground">
-            <p>Cliquez sur "Afficher" pour charger l'historique.</p>
+            <p>Cliquez sur "Évolution sur 24h" pour charger l'historique.</p>
           </div>
         )}
 
