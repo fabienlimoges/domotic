@@ -78,7 +78,7 @@ const TemperatureHistoryChart = ({
     return [...new Set(ticks)].sort((a, b) => a - b);
   }, [minTemp, avgTemp, maxTemp]);
 
-  const formatReferenceLabel = (value: number) => `${value.toFixed(1)} °C`;
+  const formatReferenceLabel = (value: number) => `${value.toFixed(1)}`;
 
   return (
     <div className="rounded-2xl border border-border bg-muted/40 p-1">
