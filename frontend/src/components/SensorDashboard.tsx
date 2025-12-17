@@ -20,9 +20,11 @@ const SensorDashboard = () => {
             </div>
             <div>
               <h1 className="text-lg font-display font-medium text-foreground">Ma Maison</h1>
-              <p className="text-xs text-muted-foreground">
-                {!isFetching && sensors.length} capteur{sensors.length > 1 ? 's' : ''}
-              </p>
+              {!isFetching &&
+                <p className="text-xs text-muted-foreground">
+                  {sensors.length} capteur{sensors.length > 1 ? 's' : ''}
+                </p>
+              }
             </div>
           </div>
           
