@@ -15,6 +15,5 @@ export const useSensorData = () => {
     queryFn: fetchSensorData,
     refetchInterval: 30000, // Refresh every 30 seconds
     staleTime: 10000,
-    initialData: [],
   });
 };
