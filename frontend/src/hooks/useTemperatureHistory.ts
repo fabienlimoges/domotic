@@ -2,12 +2,12 @@ import { useQuery } from "@tanstack/react-query";
 import { SensorMeasure } from "@/types/sensor";
 
 const fetchTemperatureHistory = async (
-  sensorName: string,
+  location: string,
   hours: number,
 ): Promise<SensorMeasure[]> => {
   const params = new URLSearchParams({ hours: hours.toString() });
   const response = await fetch(
-    `/sensor/measure/history/${encodeURIComponent(sensorName)}?${params.toString()}`,
+    `/sensor/measure/history/${encodeURIComponent(location)}?${params.toString()}`,
   );
 
   if (!response.ok) {
@@ -18,20 +18,20 @@ const fetchTemperatureHistory = async (
 };
 
 export const useTemperatureHistory = (
-  sensorName: string,
+  location: string,
   hours = 24,
   enabled = false,
 ) => {
   return useQuery({
-    queryKey: ["temperatureHistory", sensorName, hours],
-    queryFn: () => fetchTemperatureHistory(sensorName, hours),
-    enabled: Boolean(sensorName) && enabled,
+    queryKey: ["temperatureHistory", location, hours],
+    queryFn: () => fetchTemperatureHistory(location, hours),
+    enabled: Boolean(location) && enabled,
     staleTime: 60_000,
     refetchInterval: enabled ? 60_000 : false,
   });
 };
 
-export const buildMockHistory = (baseTemperature: number): SensorMeasure[] => {
+export const buildMockHistory = (baseTemperature: number, label = "Mock"): SensorMeasure[] => {
   const now = Date.now();
 
   return Array.from({ length: 12 }, (_, index) => {
@@ -40,7 +40,7 @@ export const buildMockHistory = (baseTemperature: number): SensorMeasure[] => {
 
     return {
       id: index + 1,
-      sensorName: "Mock",
+      sensorName: label,
       temperature: parseFloat((baseTemperature + tempVariation).toFixed(1)),
       pression: 1013,
       measuredAt: timestamp.toISOString(),

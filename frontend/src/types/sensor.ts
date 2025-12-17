@@ -1,6 +1,7 @@
 export interface SensorMeasure {
   id: number;
   sensorName: string;
+  location?: string | null;
   temperature: number;
   pression: number;
   altitude?: number | null;

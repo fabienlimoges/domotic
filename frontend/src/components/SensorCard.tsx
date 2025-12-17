@@ -1,12 +1,15 @@
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { SensorCardProps } from "@/types/sensor";
-import { Droplets, Gauge, Leaf } from "lucide-react";
+import { Check, Droplets, Gauge, Leaf, Loader2, MapPin, Pencil, X } from "lucide-react";
 import { formatDistanceToNow } from "date-fns";
 import { fr } from "date-fns/locale";
 import TemperatureHistoryChart from "@/components/TemperatureHistoryChart";
 import { buildMockHistory, useTemperatureHistory } from "@/hooks/useTemperatureHistory";
 import { parseMeasuredAt } from "@/lib/parseMeasuredAt";
 import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { useSensorLocation } from "@/hooks/useSensorLocation";
+import { useToast } from "@/components/ui/use-toast";
 
 const SensorCard = ({ sensor, staleThresholdMinutes = 60 }: SensorCardProps) => {
   const measureDate = parseMeasuredAt(sensor.measuredAt);
@@ -19,6 +22,15 @@ const SensorCard = ({ sensor, staleThresholdMinutes = 60 }: SensorCardProps) => 
     : "Date inconnue";
 
   const [historyEnabled, setHistoryEnabled] = useState(false);
+  const [isEditingLocation, setIsEditingLocation] = useState(false);
+  const [locationInput, setLocationInput] = useState(sensor.location ?? "");
+  const locationLabel = sensor.location ?? sensor.sensorName;
+  const { toast } = useToast();
+  const {
+    mutate: saveLocation,
+    isPending: isSavingLocation,
+  } = useSensorLocation();
+
   const {
     data: history,
     isLoading: isHistoryLoading,
@@ -26,11 +38,11 @@ const SensorCard = ({ sensor, staleThresholdMinutes = 60 }: SensorCardProps) => 
     isError: isHistoryError,
     isIdle: isHistoryIdle,
     refetch: refetchHistory,
-  } = useTemperatureHistory(sensor.sensorName, 24, historyEnabled);
+  } = useTemperatureHistory(locationLabel, 24, historyEnabled);
 
   const historyPoints = useMemo(
-    () => (isHistoryError ? buildMockHistory(sensor.temperature) : history ?? []),
-    [history, isHistoryError, sensor.temperature],
+    () => (isHistoryError ? buildMockHistory(sensor.temperature, locationLabel) : history ?? []),
+    [history, isHistoryError, locationLabel, sensor.temperature],
   );
   const showHistorySpinner = (isHistoryLoading || isHistoryFetching) && historyPoints.length === 0;
 
@@ -40,6 +52,80 @@ const SensorCard = ({ sensor, staleThresholdMinutes = 60 }: SensorCardProps) => 
     } else {
       refetchHistory();
     }
+  };
+
+  const handleSaveLocation = () => {
+    const trimmedLocation = locationInput.trim();
+
+    if (!trimmedLocation) {
+      toast({
+        title: "Lieu manquant",
+        description: "Veuillez saisir un lieu pour le capteur.",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    saveLocation(
+      { sensorName: sensor.sensorName, location: trimmedLocation },
+      {
+        onSuccess: () => {
+          setIsEditingLocation(false);
+        },
+      },
+    );
+  };
+
+  useEffect(() => {
+    setLocationInput(sensor.location ?? "");
+  }, [sensor.location]);
+
+  const renderLocationEditor = () => {
+    if (!isEditingLocation) {
+      return (
+        <div className="flex items-center gap-2">
+          <p className="text-sm text-muted-foreground">Capteur : {sensor.sensorName}</p>
+          <Button
+            variant="ghost"
+            size="icon"
+            className="h-8 w-8"
+            onClick={() => setIsEditingLocation(true)}
+          >
+            <Pencil className="h-4 w-4 text-muted-foreground" />
+          </Button>
+        </div>
+      );
+    }
+
+    return (
+      <div className="flex flex-wrap items-center gap-2">
+        <Input
+          value={locationInput}
+          onChange={(event) => setLocationInput(event.target.value)}
+          placeholder="Salon, Chambre, Bureau..."
+          className="h-9 min-w-[12rem] flex-1"
+        />
+        <div className="flex items-center gap-1">
+          <Button
+            size="sm"
+            className="h-9"
+            onClick={handleSaveLocation}
+            disabled={isSavingLocation}
+          >
+            {isSavingLocation ? <Loader2 className="h-4 w-4 animate-spin" /> : <Check className="h-4 w-4" />}
+          </Button>
+          <Button
+            variant="ghost"
+            size="icon"
+            className="h-9 w-9"
+            onClick={() => setIsEditingLocation(false)}
+            disabled={isSavingLocation}
+          >
+            <X className="h-4 w-4 text-muted-foreground" />
+          </Button>
+        </div>
+      </div>
+    );
   };
 
   return (
@@ -53,8 +139,12 @@ const SensorCard = ({ sensor, staleThresholdMinutes = 60 }: SensorCardProps) => 
           <div className="leaf-badge h-10 w-10">
             <Leaf className="h-5 w-5" />
           </div>
-          <div>
-            <h2 className="text-lg font-medium text-foreground">{sensor.sensorName}</h2>
+          <div className="space-y-2">
+            <div className="flex items-center gap-2">
+              <MapPin className="h-4 w-4 text-primary" />
+              <h2 className="text-lg font-medium text-foreground">{locationLabel}</h2>
+            </div>
+            {renderLocationEditor()}
             <p className={`text-sm ${isStale ? 'status-stale font-medium' : 'text-muted-foreground'}`}>
               {isStale && "⚠ "}{timeAgo}
             </p>
@@ -87,7 +177,7 @@ const SensorCard = ({ sensor, staleThresholdMinutes = 60 }: SensorCardProps) => 
 
         {historyEnabled && (
           <TemperatureHistoryChart
-            sensorName={sensor.sensorName}
+            sensorName={locationLabel}
             history={historyPoints}
             isLoading={showHistorySpinner}
             isIdle={isHistoryIdle}
