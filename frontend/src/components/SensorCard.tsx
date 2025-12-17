@@ -84,7 +84,8 @@ const SensorCard = ({ sensor, staleThresholdMinutes = 60 }: SensorCardProps) => 
     if (!isEditingLocation) {
       return (
         <div className="flex items-center gap-2">
-          <p className="text-sm text-muted-foreground">Capteur : {sensor.sensorName}</p>
+          <h2 className="text-lg font-medium text-foreground">{locationLabel || "Définir lieu"}</h2>
+          <p className="text-sm text-muted-foreground">{sensor.sensorName}</p>
           <Button
             variant="ghost"
             size="icon"
@@ -139,15 +140,13 @@ const SensorCard = ({ sensor, staleThresholdMinutes = 60 }: SensorCardProps) => 
           <div className="leaf-badge h-10 w-10">
             <Leaf className="h-5 w-5" />
           </div>
-          <div className="space-y-2">
-            <div className="flex items-center gap-2">
+          <div className="space-y-1">
+            {/* <div className="flex items-center gap-2">
               <MapPin className="h-4 w-4 text-primary" />
               <h2 className="text-lg font-medium text-foreground">{locationLabel}</h2>
-            </div>
+            </div> */}
             {renderLocationEditor()}
-            <p className={`text-sm ${isStale ? 'status-stale font-medium' : 'text-muted-foreground'}`}>
-              {isStale && "⚠ "}{timeAgo}
-            </p>
+         
           </div>
         </div>
       </header>
@@ -160,6 +159,9 @@ const SensorCard = ({ sensor, staleThresholdMinutes = 60 }: SensorCardProps) => 
           </span>
           <span className="temperature-unit">°C</span>
         </div>
+           <p className={`text-sm ${isStale ? 'status-stale font-medium' : 'text-muted-foreground'}`}>
+              {isStale && "⚠ "}{timeAgo}
+            </p>
       </div>
 
       <div className="mb-6 space-y-3">

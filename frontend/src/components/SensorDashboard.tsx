@@ -7,17 +7,7 @@ const SensorDashboard = () => {
   const { data, isError, refetch, isFetching, isLoading } = useSensorData();
 
   
-  const sensors = data || [{
-    "id": 729,
-    "sensorName": "choucroute-01",
-    "temperature": 20.17,
-    "pression": 1001.162,
-    "altitude": 101.132,
-    "humidity": null,
-    "location": "Séjour",
-    "measuredAt": "2025-12-17T15:08:09Z"
-}]
-;
+  const sensors = data ;
 
   return (
     <div className="min-h-screen bg-background">
