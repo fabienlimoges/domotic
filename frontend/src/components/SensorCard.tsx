@@ -77,7 +77,7 @@ const SensorCard = ({ sensor, staleThresholdMinutes = 60 }: SensorCardProps) => 
           <Button
             variant="ghost"
             size="sm"
-            className="h-auto px-0 text-sm font-medium text-foreground"
+            className="h-auto px-1 text-sm font-medium text-foreground"
             onClick={handleHistoryClick}
             disabled={isHistoryLoading || isHistoryFetching}
           >
