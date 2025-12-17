@@ -44,8 +44,8 @@ const SensorCard = ({ sensor, staleThresholdMinutes = 60 }: SensorCardProps) => 
 
   return (
     <article 
-      className="sensor-card opacity-0 animate-fade-up"
-      style={{ animationDelay: `${sensor.id * 80}ms` }}
+      className="sensor-card animate-fade-up"
+      //style={{ animationDelay: `${sensor.id * 80}ms` }}
     >
       {/* Header */}
       <header className="flex items-start justify-between mb-6">
