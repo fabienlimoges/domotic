@@ -81,7 +81,7 @@ const TemperatureHistoryChart = ({
   const formatReferenceLabel = (value: number) => `${value.toFixed(1)} °C`;
 
   return (
-    <div className="rounded-2xl border border-border bg-muted/40 p-4">
+    <div className="rounded-2xl border border-border bg-muted/40 p-1">
       {/* <div className="mb-3 flex items-center justify-between">
         <div className="flex items-center gap-2">
           <div className="flex h-8 w-8 items-center justify-center rounded-full bg-leaf-light text-primary">
@@ -160,7 +160,7 @@ const TemperatureHistoryChart = ({
               />
               <ReferenceLine
                 y={minTemp}
-                stroke="hsl(var(--muted))"
+                stroke="hsl(var(--leaf))"
                 strokeDasharray="4 4"
               />
               <Tooltip
