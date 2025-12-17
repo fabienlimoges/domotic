@@ -7,6 +7,7 @@ import jakarta.persistence.Entity;
 import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
+import jakarta.persistence.Transient;
 import jakarta.persistence.Table;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
@@ -45,4 +46,7 @@ public class SensorMeasure {
     @JsonProperty("measuredAt")
     @JsonFormat(shape = JsonFormat.Shape.STRING)
     private Instant measuredAt;
+
+    @Transient
+    private String location;
 }

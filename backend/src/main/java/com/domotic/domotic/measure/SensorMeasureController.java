@@ -1,5 +1,7 @@
 package com.domotic.domotic.measure;
 
+import com.domotic.domotic.sensor.SensorLocation;
+import com.domotic.domotic.sensor.SensorLocationRepository;
 import org.springframework.http.HttpStatus;
 import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -13,20 +15,26 @@ import org.springframework.web.bind.annotation.RestController;
 
 import java.time.Instant;
 import java.util.List;
+import java.util.Optional;
 
 @RestController
 @RequestMapping("/sensor/measure")
 public class SensorMeasureController {
 
     private final SensorMeasureRepository repository;
+    private final SensorLocationRepository locationRepository;
 
-    public SensorMeasureController(SensorMeasureRepository repository) {
+    public SensorMeasureController(SensorMeasureRepository repository, SensorLocationRepository locationRepository) {
         this.repository = repository;
+        this.locationRepository = locationRepository;
     }
 
     @GetMapping("/last")
     public List<SensorMeasure> findLastMeasures() {
-        return repository.findLatestMeasuresPerSensor();
+        List<SensorMeasure> measures = repository.findLatestMeasuresPerSensor();
+
+        measures.forEach(this::applyLocation);
+        return measures;
     }
 
     @PostMapping
@@ -48,10 +56,21 @@ public class SensorMeasureController {
 
     @GetMapping("/history/{sensorName}")
     public List<SensorMeasure> findHistory(
-            @PathVariable String sensorName,
+            @PathVariable(name = "sensorName") String location,
             @RequestParam(name = "hours", defaultValue = "24") int hours
     ) {
         int validatedHours = Math.max(hours, 1);
-        return repository.findMeasuresWithinLastHoursForSensor(validatedHours, sensorName);
+        String resolvedSensorName = locationRepository.findByLocation(location)
+                .map(SensorLocation::getSensorName)
+                .orElse(location);
+
+        List<SensorMeasure> measures = repository.findMeasuresWithinLastHoursForSensor(validatedHours, resolvedSensorName);
+        measures.forEach(this::applyLocation);
+        return measures;
+    }
+
+    private void applyLocation(SensorMeasure measure) {
+        Optional<SensorLocation> location = locationRepository.findBySensorName(measure.getSensorName());
+        location.ifPresent(sensorLocation -> measure.setLocation(sensorLocation.getLocation()));
     }
 }
