@@ -1,4 +1,4 @@
-import { useSensorData, mockSensorData } from "@/hooks/useSensorData";
+import { useSensorData } from "@/hooks/useSensorData";
 import SensorCard from "./SensorCard";
 import { Leaf, RefreshCw, CloudOff } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -7,7 +7,7 @@ const SensorDashboard = () => {
   const { data, isLoading, isError, refetch, isFetching } = useSensorData();
 
   // Use mock data when available, but never show it on errors
-  const sensors = isError ? [] : data ?? mockSensorData;
+  const sensors = data;
 
   return (
     <div className="min-h-screen bg-background">
@@ -60,7 +60,7 @@ const SensorDashboard = () => {
         )}
 
         {/* Sensor cards */}
-        {!isLoading && !isError && (
+        {sensors.length > 0 && (
           <div className="flex flex-col gap-4">
             {sensors.map((sensor) => (
               <SensorCard key={sensor.id} sensor={sensor} staleThresholdMinutes={60} />
@@ -69,7 +69,7 @@ const SensorDashboard = () => {
         )}
 
         {/* Empty state */}
-        {!isLoading && !isError && sensors.length === 0 && (
+        {sensors.length === 0 && (
           <div className="flex flex-col items-center justify-center py-16 text-center">
             <div className="mb-4 flex h-14 w-14 items-center justify-center rounded-full bg-muted">
               <Leaf className="h-6 w-6 text-muted-foreground" />
