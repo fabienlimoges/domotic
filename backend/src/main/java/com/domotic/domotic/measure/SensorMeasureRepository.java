@@ -8,10 +8,13 @@ import java.util.List;
 
 public interface SensorMeasureRepository extends JpaRepository<SensorMeasure, Long> {
 
-    @Query(value = "SELECT DISTINCT ON (sensor_name)" +
-            "FROM sensor_measure" +
-            "ORDER BY sensor_name, measured_at DESC;", nativeQuery = true)
+    @Query(value = """
+                SELECT DISTINCT ON (sensor_name) sm.*
+                FROM sensor_measure sm
+                ORDER BY sm.sensor_name, sm.measured_at DESC
+            """, nativeQuery = true)
     List<SensorMeasure> findLatestMeasuresPerSensor();
+
 
     @Query(value = "SELECT sm.* FROM sensor_measure sm " +
             "WHERE sm.sensor_name = :sensorName " +
