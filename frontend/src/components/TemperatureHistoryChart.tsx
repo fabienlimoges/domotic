@@ -78,12 +78,7 @@ const TemperatureHistoryChart = ({
     return [...new Set(ticks)].sort((a, b) => a - b);
   }, [minTemp, avgTemp, maxTemp]);
 
-  const formatReferenceLabel = (value: number) => {
-    if (value === maxTemp) return `${maxTemp.toFixed(1)} °C (max)`;
-    if (value === minTemp) return `${minTemp.toFixed(1)} °C (min)`;
-    if (value === avgTemp) return `${avgTemp.toFixed(1)} °C (moy.)`;
-    return `${value.toFixed(1)} °C`;
-  };
+  const formatReferenceLabel = (value: number) => `${value.toFixed(1)} °C`;
 
   return (
     <div className="rounded-2xl border border-border bg-muted/40 p-4">
@@ -126,7 +121,7 @@ const TemperatureHistoryChart = ({
 
         {!isLoading && !isIdle && !isEmpty && (
           <ResponsiveContainer width="100%" height="100%">
-            <AreaChart data={chartData} margin={{ left: 4, right: 4, top: 10, bottom: 0 }}>
+            <AreaChart data={chartData} margin={{ left: 0, right: 6, top: 10, bottom: 0 }}>
               <defs>
                 <linearGradient id={`temperatureGradient-${sensorName}`} x1="0" y1="0" x2="0" y2="1">
                   <stop offset="5%" stopColor="hsl(var(--leaf))" stopOpacity={0.28} />
@@ -137,6 +132,7 @@ const TemperatureHistoryChart = ({
               <YAxis
                 domain={yDomain}
                 ticks={referenceTicks}
+                width={44}
                 axisLine={false}
                 tickLine={false}
                 tick={{
