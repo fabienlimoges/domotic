@@ -73,6 +73,18 @@ const TemperatureHistoryChart = ({
 
   const isEmpty = !isLoading && !isIdle && chartData.length === 0;
 
+  const referenceTicks = useMemo(() => {
+    const ticks = [minTemp, avgTemp, maxTemp];
+    return [...new Set(ticks)].sort((a, b) => a - b);
+  }, [minTemp, avgTemp, maxTemp]);
+
+  const formatReferenceLabel = (value: number) => {
+    if (value === maxTemp) return `${maxTemp.toFixed(1)} °C (max)`;
+    if (value === minTemp) return `${minTemp.toFixed(1)} °C (min)`;
+    if (value === avgTemp) return `${avgTemp.toFixed(1)} °C (moy.)`;
+    return `${value.toFixed(1)} °C`;
+  };
+
   return (
     <div className="rounded-2xl border border-border bg-muted/40 p-4">
       {/* <div className="mb-3 flex items-center justify-between">
@@ -122,7 +134,17 @@ const TemperatureHistoryChart = ({
                 </linearGradient>
               </defs>
               <CartesianGrid vertical={false} strokeDasharray="3 3" stroke="hsl(var(--border))" />
-              <YAxis domain={yDomain} hide />
+              <YAxis
+                domain={yDomain}
+                ticks={referenceTicks}
+                axisLine={false}
+                tickLine={false}
+                tick={{
+                  fontSize: 11,
+                  fill: "hsl(var(--muted-foreground))",
+                }}
+                tickFormatter={formatReferenceLabel}
+              />
               <XAxis
                 dataKey="time"
                 tick={{ fontSize: 11, fill: "hsl(var(--muted-foreground))" }}
@@ -134,34 +156,16 @@ const TemperatureHistoryChart = ({
                 y={maxTemp}
                 stroke="hsl(var(--leaf))"
                 strokeDasharray="4 4"
-                label={{
-                  value: `${maxTemp.toFixed(1)} °C (max)`,
-                  position: "right",
-                  fill: "hsl(var(--leaf))",
-                  fontSize: 11,
-                }}
               />
               <ReferenceLine
                 y={avgTemp}
                 stroke="hsl(var(--muted-foreground))"
                 strokeDasharray="3 3"
-                label={{
-                  value: `${avgTemp.toFixed(1)} °C (moy.)`,
-                  position: "right",
-                  fill: "hsl(var(--muted-foreground))",
-                  fontSize: 11,
-                }}
               />
               <ReferenceLine
                 y={minTemp}
                 stroke="hsl(var(--muted))"
                 strokeDasharray="4 4"
-                label={{
-                  value: `${minTemp.toFixed(1)} °C (min)`,
-                  position: "right",
-                  fill: "hsl(var(--muted-foreground))",
-                  fontSize: 11,
-                }}
               />
               <Tooltip
                 contentStyle={{
