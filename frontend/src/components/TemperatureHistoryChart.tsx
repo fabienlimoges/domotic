@@ -3,8 +3,10 @@ import {
   Area,
   AreaChart,
   CartesianGrid,
+  ReferenceLine,
   ResponsiveContainer,
   Tooltip,
+  YAxis,
   XAxis,
 } from "recharts";
 import { LineChart, Loader2 } from "lucide-react";
@@ -52,6 +54,22 @@ const TemperatureHistoryChart = ({
         .filter(Boolean) as ChartPoint[],
     [history],
   );
+
+  const { minTemp, maxTemp, avgTemp, yDomain } = useMemo(() => {
+    if (!chartData.length) {
+      return { minTemp: 0, maxTemp: 0, avgTemp: 0, yDomain: [0, 1] as [number, number] };
+    }
+
+    const temperatures = chartData.map((point) => point.temperature);
+    const min = Math.min(...temperatures);
+    const max = Math.max(...temperatures);
+    const avg = temperatures.reduce((total, temp) => total + temp, 0) / temperatures.length;
+
+    const padding = Math.max(0.2, (max - min) * 0.05);
+    const domain: [number, number] = [min - padding, max + padding];
+
+    return { minTemp: min, maxTemp: max, avgTemp: avg, yDomain: domain };
+  }, [chartData]);
 
   const isEmpty = !isLoading && !isIdle && chartData.length === 0;
 
@@ -104,12 +122,46 @@ const TemperatureHistoryChart = ({
                 </linearGradient>
               </defs>
               <CartesianGrid vertical={false} strokeDasharray="3 3" stroke="hsl(var(--border))" />
+              <YAxis domain={yDomain} hide />
               <XAxis
                 dataKey="time"
                 tick={{ fontSize: 11, fill: "hsl(var(--muted-foreground))" }}
                 tickLine={false}
                 axisLine={false}
                 interval="preserveStartEnd"
+              />
+              <ReferenceLine
+                y={maxTemp}
+                stroke="hsl(var(--leaf))"
+                strokeDasharray="4 4"
+                label={{
+                  value: `${maxTemp.toFixed(1)} °C (max)`,
+                  position: "right",
+                  fill: "hsl(var(--leaf))",
+                  fontSize: 11,
+                }}
+              />
+              <ReferenceLine
+                y={avgTemp}
+                stroke="hsl(var(--muted-foreground))"
+                strokeDasharray="3 3"
+                label={{
+                  value: `${avgTemp.toFixed(1)} °C (moy.)`,
+                  position: "right",
+                  fill: "hsl(var(--muted-foreground))",
+                  fontSize: 11,
+                }}
+              />
+              <ReferenceLine
+                y={minTemp}
+                stroke="hsl(var(--muted))"
+                strokeDasharray="4 4"
+                label={{
+                  value: `${minTemp.toFixed(1)} °C (min)`,
+                  position: "right",
+                  fill: "hsl(var(--muted-foreground))",
+                  fontSize: 11,
+                }}
               />
               <Tooltip
                 contentStyle={{
