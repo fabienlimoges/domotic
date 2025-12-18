@@ -203,6 +203,7 @@ const SensorCard = ({ sensor, staleThresholdMinutes = 60 }: SensorCardProps) => 
             isIdle={isHistoryIdle}
             isError={isHistoryError}
             periodLabel={historyRanges.find((range) => range.hours === historyHours)?.label}
+            hours={historyHours}
           />
         )}
       </div>

@@ -22,15 +22,14 @@ type TemperatureHistoryChartProps = {
   isIdle?: boolean;
   isError?: boolean;
   periodLabel?: string;
+  hours?: number;
 };
 
 type ChartPoint = {
-  time: string;
   measuredAt: string;
+  timestamp: number;
   temperature: number;
 };
-
-const formatTime = (date: Date) => format(date, "HH:mm", { locale: fr });
 
 const TemperatureHistoryChart = ({
   sensorName,
@@ -39,6 +38,7 @@ const TemperatureHistoryChart = ({
   isIdle = false,
   isError = false,
   periodLabel,
+  hours,
 }: TemperatureHistoryChartProps) => {
   const chartData: ChartPoint[] = useMemo(
     () =>
@@ -48,14 +48,24 @@ const TemperatureHistoryChart = ({
           if (!date) return null;
 
           return {
-            time: formatTime(date),
             measuredAt: date.toISOString(),
+            timestamp: date.getTime(),
             temperature: measure.temperature,
           };
         })
-        .filter(Boolean) as ChartPoint[],
+        .filter(Boolean)
+        .sort((a, b) => a.timestamp - b.timestamp) as ChartPoint[],
     [history],
   );
+
+  const chartDurationHours = useMemo(() => {
+    if (chartData.length < 2) return 0;
+
+    const first = chartData[0]?.timestamp;
+    const last = chartData[chartData.length - 1]?.timestamp;
+
+    return first && last ? (last - first) / (1000 * 60 * 60) : 0;
+  }, [chartData]);
 
   const { minTemp, maxTemp, avgTemp, yDomain } = useMemo(() => {
     if (!chartData.length) {
@@ -81,6 +91,23 @@ const TemperatureHistoryChart = ({
   }, [minTemp, avgTemp, maxTemp]);
 
   const formatReferenceLabel = (value: number) => `${value.toFixed(1)}`;
+
+  const formatTimeLabel = (timestamp: number) => {
+    const date = new Date(timestamp);
+    if (Number.isNaN(date.getTime())) return "";
+
+    const extendedRangeHours = hours ?? chartDurationHours;
+
+    if (extendedRangeHours > 48) {
+      return format(date, "EEE d", { locale: fr });
+    }
+
+    if (extendedRangeHours > 24) {
+      return format(date, "EEE HH:mm", { locale: fr });
+    }
+
+    return format(date, "HH:mm", { locale: fr });
+  };
 
   return (
     <div className="rounded-2xl border border-border bg-muted/40 p-1">
@@ -145,11 +172,15 @@ const TemperatureHistoryChart = ({
                 tickFormatter={formatReferenceLabel}
               />
               <XAxis
-                dataKey="time"
+                dataKey="timestamp"
+                type="number"
+                scale="time"
+                domain={["dataMin", "dataMax"]}
                 tick={{ fontSize: 11, fill: "hsl(var(--muted-foreground))" }}
                 tickLine={false}
                 axisLine={false}
                 interval="preserveStartEnd"
+                tickFormatter={formatTimeLabel}
               />
               <ReferenceLine
                 y={maxTemp}
