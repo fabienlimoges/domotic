@@ -21,6 +21,7 @@ type TemperatureHistoryChartProps = {
   isLoading: boolean;
   isIdle?: boolean;
   isError?: boolean;
+  periodLabel?: string;
 };
 
 type ChartPoint = {
@@ -37,6 +38,7 @@ const TemperatureHistoryChart = ({
   isLoading,
   isIdle = false,
   isError = false,
+  periodLabel,
 }: TemperatureHistoryChartProps) => {
   const chartData: ChartPoint[] = useMemo(
     () =>
@@ -82,22 +84,23 @@ const TemperatureHistoryChart = ({
 
   return (
     <div className="rounded-2xl border border-border bg-muted/40 p-1">
-      {/* <div className="mb-3 flex items-center justify-between">
-        <div className="flex items-center gap-2">
-          <div className="flex h-8 w-8 items-center justify-center rounded-full bg-leaf-light text-primary">
-            <LineChart className="h-4 w-4" />
-          </div>
-          <div>
-            <p className="text-sm font-medium text-foreground">Historique</p>
-            <p className="text-xs text-muted-foreground">{sensorName} · 24h</p>
-          </div>
+      <div className="mb-3 flex items-center gap-2">
+        <div className="flex h-8 w-8 items-center justify-center rounded-full bg-leaf-light text-primary">
+          <LineChart className="h-4 w-4" />
         </div>
-      </div> */}
+        <div>
+          <p className="text-sm font-medium text-foreground">Historique</p>
+          <p className="text-xs text-muted-foreground">
+            {sensorName}
+            {periodLabel ? ` · ${periodLabel}` : ""}
+          </p>
+        </div>
+      </div>
 
       <div className="h-36">
         {isIdle && (
           <div className="flex h-full items-center justify-center text-sm text-muted-foreground">
-            <p>Cliquez sur "Évolution sur 24h" pour charger l'historique.</p>
+            <p>Choisissez une période pour charger l'historique.</p>
           </div>
         )}
 

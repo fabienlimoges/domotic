@@ -11,6 +11,12 @@ import { Input } from "@/components/ui/input";
 import { useSensorLocation } from "@/hooks/useSensorLocation";
 import { useToast } from "@/components/ui/use-toast";
 
+const historyRanges = [
+  { label: "24h", hours: 24 },
+  { label: "3j", hours: 72 },
+  { label: "1 sem.", hours: 168 },
+];
+
 const SensorCard = ({ sensor, staleThresholdMinutes = 60 }: SensorCardProps) => {
   const measureDate = parseMeasuredAt(sensor.measuredAt);
   const isStale = measureDate
@@ -22,6 +28,7 @@ const SensorCard = ({ sensor, staleThresholdMinutes = 60 }: SensorCardProps) => 
     : "Date inconnue";
 
   const [historyEnabled, setHistoryEnabled] = useState(false);
+  const [historyHours, setHistoryHours] = useState(historyRanges[0]?.hours ?? 24);
   const [isEditingLocation, setIsEditingLocation] = useState(false);
   const [locationInput, setLocationInput] = useState(sensor.location ?? "");
   const locationLabel = sensor.location ?? sensor.sensorName;
@@ -38,7 +45,7 @@ const SensorCard = ({ sensor, staleThresholdMinutes = 60 }: SensorCardProps) => 
     isError: isHistoryError,
     isIdle: isHistoryIdle,
     refetch: refetchHistory,
-  } = useTemperatureHistory(locationLabel, 24, historyEnabled);
+  } = useTemperatureHistory(locationLabel, historyHours, historyEnabled);
 
   const historyPoints = useMemo(
     () => (isHistoryError ? buildMockHistory(sensor.temperature, locationLabel) : history ?? []),
@@ -46,10 +53,14 @@ const SensorCard = ({ sensor, staleThresholdMinutes = 60 }: SensorCardProps) => 
   );
   const showHistorySpinner = (isHistoryLoading || isHistoryFetching) && historyPoints.length === 0;
 
-  const handleHistoryClick = () => {
+  const handleHistorySelect = (hours: number) => {
+    const isSameRange = hours === historyHours;
+
+    setHistoryHours(hours);
+
     if (!historyEnabled) {
       setHistoryEnabled(true);
-    } else {
+    } else if (isSameRange) {
       refetchHistory();
     }
   };
@@ -165,16 +176,23 @@ const SensorCard = ({ sensor, staleThresholdMinutes = 60 }: SensorCardProps) => 
       </div>
 
       <div className="mb-6 space-y-3">
-        <div className="flex items-center justify-between">
-          <Button
-            variant="ghost"
-            size="sm"
-            className="h-auto px-1 text-sm font-medium text-foreground"
-            onClick={handleHistoryClick}
-            disabled={isHistoryLoading || isHistoryFetching}
-          >
-            Évolution sur 24h
-          </Button>
+        <div className="flex flex-wrap items-center gap-2">
+          {historyRanges.map((range) => {
+            const isActive = historyHours === range.hours;
+
+            return (
+              <Button
+                key={range.hours}
+                variant={isActive ? "secondary" : "ghost"}
+                size="sm"
+                className="h-auto px-2 text-sm font-medium text-foreground"
+                onClick={() => handleHistorySelect(range.hours)}
+                disabled={(isHistoryLoading || isHistoryFetching) && isActive}
+              >
+                {range.label}
+              </Button>
+            );
+          })}
         </div>
 
         {historyEnabled && (
@@ -184,6 +202,7 @@ const SensorCard = ({ sensor, staleThresholdMinutes = 60 }: SensorCardProps) => 
             isLoading={showHistorySpinner}
             isIdle={isHistoryIdle}
             isError={isHistoryError}
+            periodLabel={historyRanges.find((range) => range.hours === historyHours)?.label}
           />
         )}
       </div>
